@@ -1,33 +1,39 @@
 defmodule UniqueWordsSigil do
   @moduledoc """
-  ~u sigil - unique-word strings, lists, HTML classes, checked at compile time
-  ----------------------------------------------------------------------------
+  ~u Sigil
+  --------
+  Unique-word strings, lists, HTML classes, checked at compile time.
 
-  Examples:
-  ---------
+  Examples
+  --------
+  ```
   ~u"hello world"      -> "hello world"
   ~u" hello  world "   -> "hello world"  # whitespace is trimmed and "collapsed"
   ~u" hello  world "l  -> ["hello", "world"]
-  ~u" hello  world "a  -> [:hello", :world]
+  ~u" hello  world "a  -> [:hello, :world]
   ~u" hello  world "c  -> [~c"hello", ~c"world"]
-  ~u" hi     hi    "   -> [Compiler Error] Duplicate word: hi
-  ~u" hi-hi  hi-hi "w  -> "hi-hi hi-hi"        [Compiler Warning] Duplicate word: hi-hi
-  ~u" hi     hi    "wl -> ["hi", "hi"]         [Compiler Warning] Duplicate word: hi
-  ~u" hi-hi  hi-hi "aw -> [:"hi-hi", :"hi-hi"] [Compiler Warning] Duplicate word: hi-hi
-  ~u" hi     hi    "cw -> [~c"hi", ~c"hi"]     [Compiler Warning] Duplicate word: hi
-                                                                  ~~~~~~~~~~~~~~~~~~
+  ~u" hi     hi    "   -> (ArgumentError) Duplicate word: hi
+  ~u" hi-hi  hi-hi "w  -> "hi-hi hi-hi"        Warning: Duplicate word: hi-hi
+  ~u" hi     hi    "wl -> ["hi", "hi"]         Warning: Duplicate word: hi
+  ~u" hi-hi  hi-hi "aw -> [:"hi-hi", :"hi-hi"] Warning: Duplicate word: hi-hi
+  ~u" hi     hi    "cw -> [~c"hi", ~c"hi"]     Warning: Duplicate word: hi
+                                                        ~~~~~~~~~~~~~~~~~~
+  ```
 
-  Ideal for HTML classes used with templating systems eg. github.com/mhanberg/temple:
-  -----------------------------------------------------------------------------------
-  div class: "flex items-center flex" do                # -> Duplicate word: flex
-    p class: "text-lg font-bold text-gray-800 text-lg"  # -> Duplicate word: text-lg
-  end                                                        ~~~~~~~~~~~~~~~~~~~~~~~
+  ~u is ideal for HTML classes used with templating systems such as
+  Temple (https://github.com/mhanberg/temple):
+  ```
+  div class: ~u"flex items-center flex" do                # -> Duplicate word: flex
+    p class: ~u"text-lg font-bold text-gray-800 text-lg"  # -> Duplicate word: text-lg
+  end                                                          ~~~~~~~~~~~~~~~~~~~~~~~
+  ```
 
-  Works well with interpolation and multi-line strings:
-  -----------------------------------------------------
-  CAVEAT: interpolated sections WILL NOT be checked for uniqueness,
-          since they aren't known at compile-time.
-  ------------------------------------------------
+  ~u works well with interpolation and multi-line strings,
+  for effortless splitting of HTML classes onto multiple lines
+  to make templates more readable:
+
+  CAVEAT: Being unknown during compilation, interpolations WON'T be uniqueness-checked.
+  ```
   a href: ~p"/link/url"
     class: ~u"flex items-center h-8 text-sm pl-8 pr-3
       # {if(@active, do: ~u"bg-slate-300", else: ~u"hover:bg-slate-300")}
@@ -35,6 +41,7 @@ defmodule UniqueWordsSigil do
   do                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     "Click this link!"
   end
+  ```
   """
 
   defmacro sigil_u(term, mod)
@@ -50,7 +57,7 @@ defmodule UniqueWordsSigil do
       if ?w in mod do
         IO.warn(message, Macro.Env.stacktrace(__CALLER__))
       else
-        raise message
+        raise ArgumentError, message
       end
     end
 
@@ -84,7 +91,7 @@ defmodule UniqueWordsSigil do
       if ?w in mod do
         IO.warn(message, Macro.Env.stacktrace(__CALLER__))
       else
-        raise message
+        raise ArgumentError, message
       end
     end
 
