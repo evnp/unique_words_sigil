@@ -66,7 +66,11 @@ defmodule UniqueWordsSigil do
       message = "Duplicate word: #{duplicate_word}"
 
       if ?w in mod do
-        IO.warn(message, Macro.Env.stacktrace(__CALLER__))
+        if Mix.env() == :test do
+          IO.puts(message)
+        else
+          IO.warn(message, Macro.Env.stacktrace(__CALLER__))
+        end
       else
         raise ArgumentError, message
       end
@@ -103,7 +107,11 @@ defmodule UniqueWordsSigil do
       message = "Duplicate word: #{duplicate_word}"
 
       if ?w in mod do
-        IO.warn(message, Macro.Env.stacktrace(__CALLER__))
+        if Mix.env() == :test do
+          IO.puts(message)
+        else
+          IO.warn(message, Macro.Env.stacktrace(__CALLER__))
+        end
       else
         raise ArgumentError, message
       end

@@ -1,6 +1,6 @@
 # Unique-Words Sigil
 
-**~u sigil** - unique-word strings, lists, HTML classes, checked at compile time
+**~u sigil:** unique-word strings, lists, HTML classes, checked at compile time
 
 ## Installation
 
