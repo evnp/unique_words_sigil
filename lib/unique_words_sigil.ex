@@ -26,8 +26,8 @@ defmodule UniqueWordsSigil do
   div class: ~u"flex items-center flex" do # (CompilerError) Duplicate word: flex
     p class: ~u"text-lg font-bold
                 text-gray text-lg"  # ────── (CompilerError) Duplicate word: text-lg
-    do          #            └───── Effortless multiline classes promote readability
-      "Hello world"
+    do                  #    └───── Effortless multiline classes promote readability
+      "Hello world"     #          (~u automatically strips whitespace and newlines)
     end
   end
   ```
@@ -37,9 +37,9 @@ defmodule UniqueWordsSigil do
   a href: ~p"/link/url"
     class: ~u"flex items-center h-8 text-sm pl-8 pr-3
       \#{if(@active, do: ~u"bg-slate", else: ~u"hover:bg-slate")}
-      items-center text-blue"  # ────── Duplicate word: items-center
-  do  #          └─ Effortless multiline classes promote readability
-    "Hello world"
+      items-center text-blue"      # Duplicate word: items-center
+  do
+    "Link text"
   end
   ```
 
