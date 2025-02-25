@@ -31,8 +31,6 @@ defmodule UniqueWordsSigil do
   ~u works well with interpolation and multi-line strings,
   for effortless splitting of HTML classes onto multiple lines
   to make templates more readable:
-
-  CAVEAT: Being unknown during compilation, interpolations WON'T be uniqueness-checked.
   ```
   a href: ~p"/link/url"
     class: ~u"flex items-center h-8 text-sm pl-8 pr-3
@@ -42,14 +40,27 @@ defmodule UniqueWordsSigil do
     "Click this link!"
   end
   ```
+
+  CAVEAT: Being unknown during compilation, interpolations WON'T be uniqueness-checked.
+
+  `i` modifier may be added to check uniqueness of interpolated sections at runtime:
+  ```
+  ~u" hi hello \#{"h" <> "i"}"i -> (RuntimeError) Duplicate word: hi
+  ```
+  Interpolation uniqueness-checking is disabled by default to avoid runtime overhead.
+  When `Mix.env() == :prod`, interpolation uniqueness-checking will ALWAYS be disabled
+  even when `i` modifier is present (this represents the most common use-case).
   """
 
   defmacro sigil_u(term, mod)
 
   defmacro sigil_u({:<<>>, _meta, [str]}, mod) when is_binary(str) do
+    # ~u Sigil implementation used when entire sigil value is known at compile time, eg.
+    # ~u"Hello World" NOT ~u"Hello #{"Wor" <> "ld"}"
+
     unescaped = :elixir_interpolation.unescape_string(str)
 
-    {duplicate_word, _} = check_unique_words(unescaped, %MapSet{})
+    {duplicate_word, _} = check_unique(unescaped, %MapSet{})
 
     if duplicate_word do
       message = "Duplicate word: #{duplicate_word}"
@@ -65,21 +76,24 @@ defmodule UniqueWordsSigil do
   end
 
   defmacro sigil_u({:<<>>, meta, tokens}, mod) do
+    # ~u Sigil implementation used when interpolations are present which can only be
+    # known at runtime, eg. ~u"Hello #{"Wor" <> "ld"}" NOT ~u"Hello World"
+
     {tokens, duplicate_word, _word_set} = Enum.reduce_while(
       tokens,
-      {[], false, %MapSet{}},
+      {[], nil, %MapSet{}},
       fn token, {tokens, _duplicate_word, word_set} ->
         if not is_binary(token) do
-          {:cont, {[token | tokens], false, word_set}}
+          {:cont, {[token | tokens], nil, word_set}}
         else
           unescaped = :elixir_interpolation.unescape_string(token)
 
-          {duplicate_word, word_set} = check_unique_words(unescaped, word_set)
+          {duplicate_word, word_set} = check_unique(unescaped, word_set)
 
           if duplicate_word do
             {:halt, {[unescaped | tokens], duplicate_word, word_set}}
           else
-            {:cont, {[unescaped | tokens], false, word_set}}
+            {:cont, {[unescaped | tokens], nil, word_set}}
           end
         end
       end
@@ -100,58 +114,106 @@ defmodule UniqueWordsSigil do
     |> handle_modifiers(mod)
   end
 
-  defmacro valid_modifiers, do: ~w[s l a c w sw lw aw cw ws wl wa wc]c
+  defmacro valid_modifiers, do: ~w[
+    s l a c w i
+    sw lw aw cw ws wl wa wc
+    si li ai ci is il ia ic
+    iw wi
+    swi wsi isw iws siw wis
+    lwi wli ilw iwl liw wil
+    awi wai iaw iwa aiw wia
+    cwi wci icw iwc ciw wic
+  ]c
 
-  defmacro invalid_modifiers_message do
-    "~u sigil modifier(s) must be one of: #{valid_modifiers() |> Enum.join(", ")}"
+  defmacro invalid_modifiers_message(mod) do
+    valid = valid_modifiers() |> Enum.join(" ")
+    quote do
+      "~u(...)#{unquote(mod)} sigil modifiers must be one of: #{unquote(valid)}"
+    end
   end
 
   defp handle_modifiers(_str, mod)
       when mod != [] and mod not in valid_modifiers() do
-    raise ArgumentError, invalid_modifiers_message()
+    raise ArgumentError, invalid_modifiers_message(mod)
   end
 
   defp handle_modifiers(str, mod) when is_binary(str) do
     cond do
-      mod == [] or mod in ~w[s w sw ws]c ->
+      mod == [] or mod in ~w[s w i sw ws si is wi iw swi wsi isw iws siw wis]c ->
         collapse_whitespace(str)
-      mod in ~w[l lw wl]c ->
+      mod in ~w[l lw wl li il lwi wli ilw iwl liw wil]c ->
         String.split(str)
-      mod in ~w[a aw wa]c ->
+      mod in ~w[a aw wa ai ia awi wai iaw iwa aiw wia]c ->
         Enum.map(String.split(str), &String.to_atom/1)
-      mod in ~w[c cw wc]c ->
+      mod in ~w[c cw wc ci ic cwi wci icw iwc ciw wic]c ->
         Enum.map(String.split(str), &String.to_charlist/1)
       true ->
-        raise ArgumentError, invalid_modifiers_message()
+        raise ArgumentError, invalid_modifiers_message(mod)
     end
   end
 
-  defp handle_modifiers(str, mod) do
+  defp handle_modifiers(tokens, mod) do
     cond do
-      mod == [] or mod in ~w[s w sw ws]c ->
-        quote(do: collapse_whitespace(unquote(str)))
-      mod in ~w[l lw wl]c ->
-        quote(do: String.split(unquote(str)))
-      mod in ~w[a aw wa]c ->
-        quote(do: Enum.map(String.split(unquote(str)), &String.to_atom/1))
-      mod in ~w[c cw wc]c ->
-        quote(do: Enum.map(String.split(unquote(str)), &String.to_charlist/1))
+      mod == [] or mod in ~w[s w i sw ws si is wi iw swi wsi isw iws siw wis]c ->
+        quote(do: collapse_whitespace(
+          maybe_check_unique(unquote(tokens), unquote(mod))
+        ))
+      mod in ~w[l lw wl li il lwi wli ilw iwl liw wil]c ->
+        quote(do: String.split(
+          maybe_check_unique(unquote(tokens), unquote(mod))
+        ))
+      mod in ~w[a aw wa ai ia awi wai iaw iwa aiw wia]c ->
+        quote(do: Enum.map(
+          String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
+          &String.to_atom/1
+        ))
+      mod in ~w[c cw wc ci ic cwi wci icw iwc ciw wic]c ->
+        quote(do: Enum.map(
+          String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
+          &String.to_charlist/1
+        ))
       true ->
-        raise ArgumentError, invalid_modifiers_message()
+        raise ArgumentError, invalid_modifiers_message(mod)
     end
   end
 
-  defp check_unique_words(str, word_set) do
-    Enum.reduce_while(String.split(str), {false, word_set}, fn word, {_, word_set} ->
+  def check_unique(str, word_set) do
+    # Ensure that all words in str are unique; if not, return a duplicate_word value.
+    # Also return a set of words representing all words that were encountered.
+    # Return format is a tuple: {duplicate_word, word_set} (duplicate_word may be nil)
+
+    Enum.reduce_while(String.split(str), {nil, word_set}, fn word, {_, word_set} ->
       if MapSet.member?(word_set, word) do
         {:halt, {word, word_set}}
       else
-        {:cont, {false, MapSet.put(word_set, word)}}
+        {:cont, {nil, MapSet.put(word_set, word)}}
       end
     end)
   end
 
-  defp collapse_whitespace(str) do
+  def maybe_check_unique(str, mod) do
+    if ?i in mod and Mix.env() != :prod do
+      {duplicate_word, _} = check_unique(str, %MapSet{})
+
+      if duplicate_word do
+        message = "Duplicate word: #{duplicate_word}"
+
+        if ?w in mod do
+          if Mix.env() == :test do
+            IO.puts(message)
+          else
+            IO.warn(message)
+          end
+        else
+          raise RuntimeError, message
+        end
+      end
+    end
+
+    str
+  end
+
+  def collapse_whitespace(str) do
     # Replace any runs of whitespace with a single space:
     str = String.replace(str, ~r/\s+/, " ")
 

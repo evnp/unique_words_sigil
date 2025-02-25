@@ -68,9 +68,6 @@ end                                                     #    ~~~~~~~~~~~~~~~~~~~
 
 `~u` works well with interpolation and multi-line strings, for effortless splitting of HTML classes onto multiple lines to make templates more readable:
 
-[!IMPORTANT]
-Interpolations WILL NOT be checked for uniqueness, since they aren't known at compile-time.
-
 ```elixir
 a href: ~p"/link/url"
   class: ~u"flex items-center h-8 text-sm pl-8 pr-3
@@ -80,6 +77,16 @@ do                               #    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   "Click this link!"
 end
 ```
+[!IMPORTANT]
+Interpolations WILL NOT be checked for uniqueness, since they aren't known at compile-time.
+
+`i` modifier may be added to check uniqueness of interpolated sections at runtime:
+```
+~u" hi hello \#{"h" <> "i"}"i -> (RuntimeError) Duplicate word: hi
+```
+Interpolation uniqueness-checking is disabled by default to avoid runtime overhead.
+When `Mix.env() == :prod`, interpolation uniqueness-checking will ALWAYS be disabled
+even when `i` modifier is present (this represents the most common use-case).
 
 # License
 
