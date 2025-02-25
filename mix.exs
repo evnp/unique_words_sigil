@@ -14,7 +14,7 @@ defmodule UniqueWordsSigil.MixProject do
       app: :unique_words_sigil,
       description: description(),
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       package: package(),
       docs: docs(),
