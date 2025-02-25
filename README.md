@@ -77,7 +77,7 @@ end
 By default, interpolations WON'T be uniqueness-checked, since they aren't known at compile-time.
 
 ***`i`*** modifier may be added to check uniqueness of interpolated sections at runtime:
-```
+```elixir
 ~u" hi hello \#{"h" <> "i"}"i -> (RuntimeError) Duplicate word: hi
 ```
 Interpolation uniqueness-checking is disabled unless ***`i`*** modifier is set to avoid
