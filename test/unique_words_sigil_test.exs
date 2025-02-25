@@ -5,63 +5,63 @@ defmodule UniqueWordsSigilTest do
   import UniqueWordsSigil
 
   describe "results with default modifier," do
-    test "greets the world", do: assert ~u"hello world" === "hello world"
-    test "ignores extra spaces", do: assert ~u"hello  world" === "hello world"
-    test "ignores newlines", do: assert ~u"hello
-      world" === "hello world"
-    test "trims spaces", do: assert ~u" hello  world  " === "hello world"
-    test "trims newlines", do: assert ~u"
+    test "greets the world", do: assert(~u"hello world" === "hello world")
+    test "ignores extra spaces", do: assert(~u"hello  world" === "hello world")
+    test "ignores newlines", do: assert(~u"hello
+      world" === "hello world")
+    test "trims spaces", do: assert(~u" hello  world  " === "hello world")
+    test "trims newlines", do: assert(~u"
       hello
       world
-    " === "hello world"
+    " === "hello world")
   end
 
   describe "results with string modifier," do
-    test "greets the world", do: assert ~u"hello world"s === "hello world"
-    test "ignores extra spaces", do: assert ~u"hello  world"s === "hello world"
-    test "ignores newlines", do: assert ~u"hello
-      world"s === "hello world"
-    test "trims spaces", do: assert ~u" hello  world  "s === "hello world"
-    test "trims newlines", do: assert ~u"
+    test "greets the world", do: assert(~u"hello world"s === "hello world")
+    test "ignores extra spaces", do: assert(~u"hello  world"s === "hello world")
+    test "ignores newlines", do: assert(~u"hello
+      world"s === "hello world")
+    test "trims spaces", do: assert(~u" hello  world  "s === "hello world")
+    test "trims newlines", do: assert(~u"
       hello
       world
-    "s === "hello world"
+    "s === "hello world")
   end
 
   describe "results with list modifier," do
-    test "greets the world", do: assert ~u"hello world"l === ["hello", "world"]
-    test "ignores extra spaces", do: assert ~u"hello  world"l === ["hello", "world"]
-    test "ignores newlines", do: assert ~u"hello
-      world"l === ["hello", "world"]
-    test "trims spaces", do: assert ~u" hello  world  "l === ["hello", "world"]
-    test "trims newlines", do: assert ~u"
+    test "greets the world", do: assert(~u"hello world"l === ["hello", "world"])
+    test "ignores extra spaces", do: assert(~u"hello  world"l === ["hello", "world"])
+    test "ignores newlines", do: assert(~u"hello
+      world"l === ["hello", "world"])
+    test "trims spaces", do: assert(~u" hello  world  "l === ["hello", "world"])
+    test "trims newlines", do: assert(~u"
       hello
       world
-    "l === ["hello", "world"]
+    "l === ["hello", "world"])
   end
 
   describe "results with charlist modifier," do
-    test "greets the world", do: assert ~u"hello world"c === [~c"hello", ~c"world"]
-    test "ignores extra spaces", do: assert ~u"hello  world"c === [~c"hello", ~c"world"]
-    test "ignores newlines", do: assert ~u"hello
-      world"c === [~c"hello", ~c"world"]
-    test "trims spaces", do: assert ~u" hello  world  "c === [~c"hello", ~c"world"]
-    test "trims newlines", do: assert ~u"
+    test "greets the world", do: assert(~u"hello world"c === [~c"hello", ~c"world"])
+    test "ignores extra spaces", do: assert(~u"hello  world"c === [~c"hello", ~c"world"])
+    test "ignores newlines", do: assert(~u"hello
+      world"c === [~c"hello", ~c"world"])
+    test "trims spaces", do: assert(~u" hello  world  "c === [~c"hello", ~c"world"])
+    test "trims newlines", do: assert(~u"
       hello
       world
-    "c === [~c"hello", ~c"world"]
+    "c === [~c"hello", ~c"world"])
   end
 
   describe "results with atom modifier," do
-    test "greets the world", do: assert ~u"hello world"a === [:hello, :world]
-    test "ignores extra spaces", do: assert ~u"hello  world"a === [:hello, :world]
-    test "ignores newlines", do: assert ~u"hello
-      world"a === [:hello, :world]
-    test "trims spaces", do: assert ~u" hello  world  "a === [:hello, :world]
-    test "trims newlines", do: assert ~u"
+    test "greets the world", do: assert(~u"hello world"a === [:hello, :world])
+    test "ignores extra spaces", do: assert(~u"hello  world"a === [:hello, :world])
+    test "ignores newlines", do: assert(~u"hello
+      world"a === [:hello, :world])
+    test "trims spaces", do: assert(~u" hello  world  "a === [:hello, :world])
+    test "trims newlines", do: assert(~u"
       hello
       world
-    "a === [:hello, :world]
+    "a === [:hello, :world])
   end
 
   describe "raising with default modifier," do

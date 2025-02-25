@@ -87,25 +87,26 @@ defmodule UniqueWordsSigil do
     # ~u Sigil implementation used when interpolations are present which can only be
     # known at runtime, eg. ~u"Hello #{"Wor" <> "ld"}" NOT ~u"Hello World"
 
-    {tokens, duplicate_word, _word_set} = Enum.reduce_while(
-      tokens,
-      {[], nil, %MapSet{}},
-      fn token, {tokens, _duplicate_word, word_set} ->
-        if not is_binary(token) do
-          {:cont, {[token | tokens], nil, word_set}}
-        else
-          unescaped = :elixir_interpolation.unescape_string(token)
-
-          {duplicate_word, word_set} = check_unique(unescaped, word_set)
-
-          if duplicate_word do
-            {:halt, {[unescaped | tokens], duplicate_word, word_set}}
+    {tokens, duplicate_word, _word_set} =
+      Enum.reduce_while(
+        tokens,
+        {[], nil, %MapSet{}},
+        fn token, {tokens, _duplicate_word, word_set} ->
+          if not is_binary(token) do
+            {:cont, {[token | tokens], nil, word_set}}
           else
-            {:cont, {[unescaped | tokens], nil, word_set}}
+            unescaped = :elixir_interpolation.unescape_string(token)
+
+            {duplicate_word, word_set} = check_unique(unescaped, word_set)
+
+            if duplicate_word do
+              {:halt, {[unescaped | tokens], duplicate_word, word_set}}
+            else
+              {:cont, {[unescaped | tokens], nil, word_set}}
+            end
           end
         end
-      end
-    )
+      )
 
     if duplicate_word do
       message = "Duplicate word: #{duplicate_word}"
@@ -139,13 +140,14 @@ defmodule UniqueWordsSigil do
 
   defmacro invalid_modifiers_message(mod) do
     valid = valid_modifiers() |> Enum.join(" ")
+
     quote do
       "~u(...)#{unquote(mod)} sigil modifiers must be one of: #{unquote(valid)}"
     end
   end
 
   defp handle_modifiers(_str, mod)
-      when mod != [] and mod not in valid_modifiers() do
+       when mod != [] and mod not in valid_modifiers() do
     raise ArgumentError, invalid_modifiers_message(mod)
   end
 
@@ -153,12 +155,16 @@ defmodule UniqueWordsSigil do
     cond do
       mod == [] or mod in ~w[s w i sw ws si is wi iw swi wsi isw iws siw wis]c ->
         collapse_whitespace(str)
+
       mod in ~w[l lw wl li il lwi wli ilw iwl liw wil]c ->
         String.split(str)
+
       mod in ~w[a aw wa ai ia awi wai iaw iwa aiw wia]c ->
         Enum.map(String.split(str), &String.to_atom/1)
+
       mod in ~w[c cw wc ci ic cwi wci icw iwc ciw wic]c ->
         Enum.map(String.split(str), &String.to_charlist/1)
+
       true ->
         raise ArgumentError, invalid_modifiers_message(mod)
     end
@@ -167,23 +173,29 @@ defmodule UniqueWordsSigil do
   defp handle_modifiers(tokens, mod) do
     cond do
       mod == [] or mod in ~w[s w i sw ws si is wi iw swi wsi isw iws siw wis]c ->
-        quote(do: collapse_whitespace(
-          maybe_check_unique(unquote(tokens), unquote(mod))
-        ))
+        quote(do: collapse_whitespace(maybe_check_unique(unquote(tokens), unquote(mod))))
+
       mod in ~w[l lw wl li il lwi wli ilw iwl liw wil]c ->
-        quote(do: String.split(
-          maybe_check_unique(unquote(tokens), unquote(mod))
-        ))
+        quote(do: String.split(maybe_check_unique(unquote(tokens), unquote(mod))))
+
       mod in ~w[a aw wa ai ia awi wai iaw iwa aiw wia]c ->
-        quote(do: Enum.map(
-          String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
-          &String.to_atom/1
-        ))
+        quote(
+          do:
+            Enum.map(
+              String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
+              &String.to_atom/1
+            )
+        )
+
       mod in ~w[c cw wc ci ic cwi wci icw iwc ciw wic]c ->
-        quote(do: Enum.map(
-          String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
-          &String.to_charlist/1
-        ))
+        quote(
+          do:
+            Enum.map(
+              String.split(maybe_check_unique(unquote(tokens), unquote(mod))),
+              &String.to_charlist/1
+            )
+        )
+
       true ->
         raise ArgumentError, invalid_modifiers_message(mod)
     end
@@ -234,19 +246,23 @@ defmodule UniqueWordsSigil do
 
     # Remove possible leading and trailing single-spaces from string:
     # (use binary char replacement instead of String.trim for performace purposes)
-    str = cond do
-      first == " " && last == " " ->
-        <<_head::binary-1,rest::binary-size(byte_size(str)-2),_tail::binary-1>> = str
-        rest
-      first == " " ->
-        <<_head::binary-1,rest::binary-size(byte_size(str)-1)>> = str
-        rest
-      last == " " ->
-        <<rest::binary-size(byte_size(str)-1),_tail::binary-1>> = str
-        rest
-      true ->
-        str
-    end
+    str =
+      cond do
+        first == " " && last == " " ->
+          <<_head::binary-1, rest::binary-size(byte_size(str) - 2), _tail::binary-1>> = str
+          rest
+
+        first == " " ->
+          <<_head::binary-1, rest::binary-size(byte_size(str) - 1)>> = str
+          rest
+
+        last == " " ->
+          <<rest::binary-size(byte_size(str) - 1), _tail::binary-1>> = str
+          rest
+
+        true ->
+          str
+      end
 
     str
   end

@@ -46,7 +46,7 @@ defmodule UniqueWordsSigil.MixProject do
   defp deps() do
     [
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
 
