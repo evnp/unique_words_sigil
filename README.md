@@ -1,6 +1,18 @@
 # Unique-Words Sigil
 
-**~u sigil:** unique-word strings, lists, HTML classes, checked at compile time
+***`~u`*** **sigil ·** unique-word strings, lists, HTML classes, checked at compile time
+
+Ideal for HTML classes used with templating systems such as [Temple](https://github.com/mhanberg/temple):
+
+```elixir
+div class: ~u"flex items-center flex" do # (CompilerError) Duplicate word: flex
+  p class: ~u"text-lg font-bold
+              text-gray text-lg"  # ────── (CompilerError) Duplicate word: text-lg
+  do          #            └───── Effortless multiline classes promote readability
+    "Hello world"
+  end
+end
+```
 
 ## Installation
 
@@ -21,26 +33,17 @@ Start up a repl:
 ```elixir
 $ iex -S mix
 
-Interactive Elixir (1.18.2) - press Ctrl+C to exit (type h() ENTER for help)
+iex> import UniqueWordsSigil
 
-iex :: import UniqueWordsSigil
-UniqueWordsSigil
+iex> ~u" hello  world "
+"hello world"  # Whitespace trimmed, extra space & newlines ignored.
 
-iex :: ~u" hello  world "  # Whitespace trimmed, extra space & newlines ignored:
-"hello world"
+iex> ~u" hello  world hello  again"
+** (ArgumentError) Duplicate word: hello  # Duplicate words prevented ⚔️
 
-iex :: ~u" hello  world hello  again"  # Duplicate words prevented:
-** (ArgumentError) Duplicate word: hello
-    (unique_words_sigil 0.1.0) expanding macro: UniqueWordsSigil.sigil_u/2
-    iex:20: (file)
-
-iex :: ~u" hello  world hello  again"w  # Duplicate words warned:
-warning: Duplicate word: hello
-  iex:2: (file)
-"hello world hello again"
-
-iex :: {~u" hello  world "l, ~u" hello  world "a, ~u" hello  world "c}  # Modifiers:
+iex> {~u" hello  world "l, ~u" hello  world "a, ~u" hello  world "c}
 {["hello", "world"], [:hello, :world], [~c"hello", ~c"world"]}
+# String lists, atoms, charlists, oh my! (parity with ~w sigil)
 ```
 
 ## Usage
@@ -59,34 +62,29 @@ iex :: {~u" hello  world "l, ~u" hello  world "a, ~u" hello  world "c}  # Modifi
                                                       ~~~~~~~~~~~~~~~~~~
 ```
 
-`~u` is ideal for HTML classes used with templating systems such as [github.com/mhanberg/temple](https://github.com/mhanberg/temple):
-```elixir
-div class: ~u"flex items-center flex" do                # -> Duplicate word: flex
-  p class: ~u"text-lg font-bold text-gray-800 text-lg"  # -> Duplicate word: text-lg
-end                                                     #    ~~~~~~~~~~~~~~~~~~~~~~~
-```
-
-`~u` works well with interpolation and multi-line strings, for effortless splitting of HTML classes onto multiple lines to make templates more readable:
+***`~u`*** works well with interpolation and multi-line strings:
 
 ```elixir
 a href: ~p"/link/url"
   class: ~u"flex items-center h-8 text-sm pl-8 pr-3
-    # {if(@active, do: ~u"bg-slate-300", else: ~u"hover:bg-slate-300")}
-    items-center text-blue-800"  # -> Duplicate word: items-center
-do                               #    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  "Click this link!"
+    #{if(@active, do: ~u"bg-slate", else: ~u"hover:bg-slate")}
+    items-center text-blue"  # ────── Duplicate word: items-center
+do  #          └─ Effortless multiline classes promote readability
+  "Hello world"
 end
 ```
 [!IMPORTANT]
-Interpolations WILL NOT be checked for uniqueness, since they aren't known at compile-time.
+By default, interpolations WON'T be uniqueness-checked, since they aren't known at compile-time.
 
-`i` modifier may be added to check uniqueness of interpolated sections at runtime:
+***`i`*** modifier may be added to check uniqueness of interpolated sections at runtime:
 ```
 ~u" hi hello \#{"h" <> "i"}"i -> (RuntimeError) Duplicate word: hi
 ```
-Interpolation uniqueness-checking is disabled by default to avoid runtime overhead.
+Interpolation uniqueness-checking is disabled unless ***`i`*** modifier is set to avoid
+unintended runtime overhead.
+
 When `Mix.env() == :prod`, interpolation uniqueness-checking will ALWAYS be disabled
-even when `i` modifier is present (this represents the most common use-case).
+even when ***`i`*** modifier is set (this behavior caters to the most common use-case).
 
 # License
 

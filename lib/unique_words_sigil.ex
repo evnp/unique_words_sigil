@@ -23,33 +23,37 @@ defmodule UniqueWordsSigil do
   ~u is ideal for HTML classes used with templating systems such as
   Temple (https://github.com/mhanberg/temple):
   ```
-  div class: ~u"flex items-center flex" do                # -> Duplicate word: flex
-    p class: ~u"text-lg font-bold text-gray-800 text-lg"  # -> Duplicate word: text-lg
-  end                                                          ~~~~~~~~~~~~~~~~~~~~~~~
-  ```
-
-  ~u works well with interpolation and multi-line strings,
-  for effortless splitting of HTML classes onto multiple lines
-  to make templates more readable:
-  ```
-  a href: ~p"/link/url"
-    class: ~u"flex items-center h-8 text-sm pl-8 pr-3
-      # {if(@active, do: ~u"bg-slate-300", else: ~u"hover:bg-slate-300")}
-      items-center text-blue-800"  # -> Duplicate word: items-center
-  do                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    "Click this link!"
+  div class: ~u"flex items-center flex" do # (CompilerError) Duplicate word: flex
+    p class: ~u"text-lg font-bold
+                text-gray text-lg"  # ────── (CompilerError) Duplicate word: text-lg
+    do          #            └───── Effortless multiline classes promote readability
+      "Hello world"
+    end
   end
   ```
 
-  CAVEAT: Being unknown during compilation, interpolations WON'T be uniqueness-checked.
+  ~u also works well with string interpolation:
+  ```
+  a href: ~p"/link/url"
+    class: ~u"flex items-center h-8 text-sm pl-8 pr-3
+      \#{if(@active, do: ~u"bg-slate", else: ~u"hover:bg-slate")}
+      items-center text-blue"  # ────── Duplicate word: items-center
+  do  #          └─ Effortless multiline classes promote readability
+    "Hello world"
+  end
+  ```
+
+  CAVEAT: Being unknown during compilation, interpolations WON'T be uniqueness-checked by default.
 
   `i` modifier may be added to check uniqueness of interpolated sections at runtime:
   ```
   ~u" hi hello \#{"h" <> "i"}"i -> (RuntimeError) Duplicate word: hi
   ```
-  Interpolation uniqueness-checking is disabled by default to avoid runtime overhead.
+  Interpolation uniqueness-checking is disabled unless ***`i`*** modifier is set to
+  to avoid unintended runtime overhead.
+
   When `Mix.env() == :prod`, interpolation uniqueness-checking will ALWAYS be disabled
-  even when `i` modifier is present (this represents the most common use-case).
+  even when ***`i`*** modifier is set (this caters to the most common use-case).
   """
 
   defmacro sigil_u(term, mod)
