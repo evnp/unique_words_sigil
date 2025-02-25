@@ -2,7 +2,7 @@ defmodule UniqueWordsSigil.MixProject do
   use Mix.Project
 
   @name "Unique-Words Sigil"
-  @version "0.1.0"
+  @version "0.1.1"
   @repository "https://github.com/evnp/unique_words_sigil"
 
   defp description() do
